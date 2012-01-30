@@ -25,51 +25,63 @@
  * and Graph APIs, and start user interface interactions (such as
  * pop-ups promoting for credentials, permissions, stream posts, etc.)
  */
-@interface Facebook : NSObject<FBLoginDialogDelegate>{
+@interface Facebook : NSObject<FBLoginDialogDelegate,FBRequestDelegate>{
   NSString* _accessToken;
   NSDate* _expirationDate;
   id<FBSessionDelegate> _sessionDelegate;
-  FBRequest* _request;
+  NSMutableSet* _requests;
   FBDialog* _loginDialog;
   FBDialog* _fbDialog;
   NSString* _appId;
+  NSString* _urlSchemeSuffix;
   NSArray* _permissions;
+  BOOL _isExtendingAccessToken;
+  NSDate* _lastAccessTokenUpdate;
 }
 
 @property(nonatomic, copy) NSString* accessToken;
-
 @property(nonatomic, copy) NSDate* expirationDate;
-
 @property(nonatomic, assign) id<FBSessionDelegate> sessionDelegate;
+@property(nonatomic, copy) NSString* urlSchemeSuffix;
 
+- (id)initWithAppId:(NSString *)appId
+        andDelegate:(id<FBSessionDelegate>)delegate;
 
-- (void)authorize:(NSString *)application_id
-      permissions:(NSArray *)permissions
-         delegate:(id<FBSessionDelegate>)delegate;
+- (id)initWithAppId:(NSString *)appId
+    urlSchemeSuffix:(NSString *)urlSchemeSuffix
+        andDelegate:(id<FBSessionDelegate>)delegate;
+
+- (void)authorize:(NSArray *)permissions;
+
+- (void)extendAccessToken;
+
+- (void)extendAccessTokenIfNeeded;
+
+- (BOOL)shouldExtendAccessToken;
 
 - (BOOL)handleOpenURL:(NSURL *)url;
 
-- (void)logout:(id<FBSessionDelegate>)delegate;
+- (void)logout;
 
-- (void)requestWithParams:(NSMutableDictionary *)params
-              andDelegate:(id <FBRequestDelegate>)delegate;
+- (FBRequest*)requestWithParams:(NSMutableDictionary *)params
+                    andDelegate:(id <FBRequestDelegate>)delegate;
 
-- (void)requestWithMethodName:(NSString *)methodName
-                    andParams:(NSMutableDictionary *)params
-                andHttpMethod:(NSString *)httpMethod
-                  andDelegate:(id <FBRequestDelegate>)delegate;
+- (FBRequest*)requestWithMethodName:(NSString *)methodName
+                          andParams:(NSMutableDictionary *)params
+                      andHttpMethod:(NSString *)httpMethod
+                        andDelegate:(id <FBRequestDelegate>)delegate;
 
-- (void)requestWithGraphPath:(NSString *)graphPath
-                 andDelegate:(id <FBRequestDelegate>)delegate;
+- (FBRequest*)requestWithGraphPath:(NSString *)graphPath
+                       andDelegate:(id <FBRequestDelegate>)delegate;
 
-- (void)requestWithGraphPath:(NSString *)graphPath
-                   andParams:(NSMutableDictionary *)params
-                 andDelegate:(id <FBRequestDelegate>)delegate;
+- (FBRequest*)requestWithGraphPath:(NSString *)graphPath
+                         andParams:(NSMutableDictionary *)params
+                       andDelegate:(id <FBRequestDelegate>)delegate;
 
-- (void)requestWithGraphPath:(NSString *)graphPath
-                   andParams:(NSMutableDictionary *)params
-               andHttpMethod:(NSString *)httpMethod
-                 andDelegate:(id <FBRequestDelegate>)delegate;
+- (FBRequest*)requestWithGraphPath:(NSString *)graphPath
+                         andParams:(NSMutableDictionary *)params
+                     andHttpMethod:(NSString *)httpMethod
+                       andDelegate:(id <FBRequestDelegate>)delegate;
 
 - (void)dialog:(NSString *)action
    andDelegate:(id<FBDialogDelegate>)delegate;
@@ -89,8 +101,6 @@
  */
 @protocol FBSessionDelegate <NSObject>
 
-@optional
-
 /**
  * Called when the user successfully logged in.
  */
@@ -102,8 +112,27 @@
 - (void)fbDidNotLogin:(BOOL)cancelled;
 
 /**
+ * Called after the access token was extended. If your application has any
+ * references to the previous access token (for example, if your application
+ * stores the previous access token in persistent storage), your application
+ * should overwrite the old access token with the new one in this method.
+ * See extendAccessToken for more details.
+ */
+- (void)fbDidExtendToken:(NSString*)accessToken
+               expiresAt:(NSDate*)expiresAt;
+
+/**
  * Called when the user logged out.
  */
 - (void)fbDidLogout;
+
+/**
+ * Called when the current session has expired. This might happen when:
+ *  - the access token expired
+ *  - the app has been disabled
+ *  - the user revoked the app's permissions
+ *  - the user changed his or her password
+ */
+- (void)fbSessionInvalidated;
 
 @end

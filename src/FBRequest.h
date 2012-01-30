@@ -19,6 +19,14 @@
 
 @protocol FBRequestDelegate;
 
+enum {
+  kFBRequestStateReady,
+  kFBRequestStateLoading,
+  kFBRequestStateComplete,
+  kFBRequestStateError
+};
+typedef NSUInteger FBRequestState;
+
 /**
  * Do not use this interface directly, instead, use method in Facebook.h
  */
@@ -29,6 +37,8 @@
   NSMutableDictionary*  _params;
   NSURLConnection*      _connection;
   NSMutableData*        _responseText;
+  FBRequestState        _state;
+  NSError*              _error;
 }
 
 
@@ -51,11 +61,14 @@
  * standard Objective-C object-to-string conversion facilities.
  */
 @property(nonatomic,retain) NSMutableDictionary* params;
+@property(nonatomic,retain) NSURLConnection*  connection;
+@property(nonatomic,retain) NSMutableData* responseText;
+@property(nonatomic,readonly) FBRequestState state;
 
-
-@property(nonatomic,assign) NSURLConnection*  connection;
-
-@property(nonatomic,assign) NSMutableData* responseText;
+/**
+ * Error returned by the server in case of request's failure (or nil otherwise).
+ */
+@property(nonatomic,retain) NSError* error;
 
 
 + (NSString*)serializeURL:(NSString *)baseUrl
@@ -75,7 +88,7 @@
 
 @end
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 /*
  *Your application should implement this delegate
@@ -100,10 +113,11 @@
 - (void)request:(FBRequest *)request didFailWithError:(NSError *)error;
 
 /**
- * Called when a request returns and its response has been parsed into an object.
+ * Called when a request returns and its response has been parsed into
+ * an object.
  *
- * The resulting object may be a dictionary, an array, a string, or a number, depending
- * on thee format of the API response.
+ * The resulting object may be a dictionary, an array, a string, or a number,
+ * depending on thee format of the API response.
  */
 - (void)request:(FBRequest *)request didLoad:(id)result;
 

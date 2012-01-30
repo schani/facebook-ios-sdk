@@ -28,6 +28,10 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+@interface FBRequest ()
+@property (nonatomic,readwrite) FBRequestState state;
+@end
+
 @implementation FBRequest
 
 @synthesize delegate = _delegate,
@@ -35,8 +39,9 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
             httpMethod = _httpMethod,
             params = _params,
             connection = _connection,
-            responseText = _responseText;
-
+            responseText = _responseText,
+            state = _state,
+            error = _error;
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // class public
 
@@ -44,6 +49,7 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
                          httpMethod:(NSString *) httpMethod
                            delegate:(id<FBRequestDelegate>) delegate
                          requestURL:(NSString *) url {
+
   FBRequest* request = [[[FBRequest alloc] init] autorelease];
   request.delegate = delegate;
   request.url = url;
@@ -228,29 +234,37 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
 }
 
 /*
- * private helper function: call the delegate function when the request fail with Error
+ * private helper function: call the delegate function when the request
+ *                          fails with error
  */
 - (void)failWithError:(NSError *)error {
   if ([_delegate respondsToSelector:@selector(request:didFailWithError:)]) {
     [_delegate request:self didFailWithError:error];
   }
+  self.state = kFBRequestStateError;
 }
 
 /*
  * private helper function: handle the response data
  */
 - (void)handleResponseData:(NSData *)data {
-  if ([_delegate respondsToSelector:@selector(request:didLoadRawResponse:)]) {
+  if ([_delegate respondsToSelector:
+      @selector(request:didLoadRawResponse:)]) {
     [_delegate request:self didLoadRawResponse:data];
   }
+    
+  NSError* error = nil;
+  id result = [self parseJsonResponse:data error:&error];
+  self.error = error;  
 
   if ([_delegate respondsToSelector:@selector(request:didLoad:)] ||
-      [_delegate respondsToSelector:@selector(request:didFailWithError:)]) {
-    NSError* error = nil;
-    id result = [self parseJsonResponse:data error:&error];
+      [_delegate respondsToSelector:
+          @selector(request:didFailWithError:)]) {
+
     if (error) {
       [self failWithError:error];
-    } else if ([_delegate respondsToSelector:@selector(request:didLoad:)]) {
+    } else if ([_delegate respondsToSelector:
+        @selector(request:didLoad:)]) {
       [_delegate request:self didLoad:(result == nil ? data : result)];
     }
 
@@ -297,7 +311,7 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
   }
 
   _connection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
-
+  self.state = kFBRequestStateLoading;
 }
 
 /**
@@ -320,7 +334,8 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
   _responseText = [[NSMutableData alloc] init];
 
   NSHTTPURLResponse* httpResponse = (NSHTTPURLResponse*)response;
-  if ([_delegate respondsToSelector:@selector(request:didReceiveResponse:)]) {
+  if ([_delegate respondsToSelector:
+      @selector(request:didReceiveResponse:)]) {
     [_delegate request:self didReceiveResponse:httpResponse];
   }
 }
@@ -337,19 +352,21 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
   [self handleResponseData:_responseText];
 
-  [_responseText release];
-  _responseText = nil;
-  [_connection release];
-  _connection = nil;
+  self.responseText = nil;
+  self.connection = nil;
+
+  if (self.state != kFBRequestStateError) {
+    self.state = kFBRequestStateComplete;
+  }
 }
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
   [self failWithError:error];
 
-  [_responseText release];
-  _responseText = nil;
-  [_connection release];
-  _connection = nil;
+  self.responseText = nil;
+  self.connection = nil;
+
+  self.state = kFBRequestStateError;
 }
 
 @end

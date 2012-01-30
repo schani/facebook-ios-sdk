@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-
 #import <UIKit/UIKit.h>
-#import "DemoAppViewController.h"
+#import "FBConnect.h"
+#import "DataSet.h"
 
-@interface DemoAppAppDelegate : NSObject <UIApplicationDelegate> {
-  UIWindow *window;
-  DemoAppViewController* controller;
+@interface HackbookAppDelegate : NSObject <UIApplicationDelegate,UIAlertViewDelegate> {
+    Facebook *facebook;
+    DataSet *apiData;
+    NSMutableDictionary *userPermissions;
 }
 
 @property (nonatomic, retain) IBOutlet UIWindow *window;
 
-@end
+@property (nonatomic, retain) UINavigationController *navigationController;
 
+@property (nonatomic, retain) Facebook *facebook;
+
+@property (nonatomic, retain) DataSet *apiData;
+
+@property (nonatomic, retain) NSMutableDictionary *userPermissions;
+
+@end
