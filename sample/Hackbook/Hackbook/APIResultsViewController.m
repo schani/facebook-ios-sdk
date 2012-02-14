@@ -123,14 +123,13 @@
  */
 - (void)apiGraphUserCheckins:(NSUInteger)index {
     HackbookAppDelegate *delegate = (HackbookAppDelegate *)[[UIApplication sharedApplication] delegate];
-    SBJSON *jsonWriter = [[SBJSON new] autorelease];
 
     NSDictionary *coordinates = [NSDictionary dictionaryWithObjectsAndKeys:
                                   [[[myData objectAtIndex:index] objectForKey:@"location"] objectForKey:@"latitude"],@"latitude",
                                   [[[myData objectAtIndex:index] objectForKey:@"location"] objectForKey:@"longitude"],@"longitude",
                                   nil];
 
-    NSString *coordinatesStr = [jsonWriter stringWithObject:coordinates];
+    NSString *coordinatesStr = [coordinates JSONRepresentation];
     NSMutableDictionary *params = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                    [[myData objectAtIndex:index] objectForKey:@"id"], @"place",
                                    coordinatesStr, @"coordinates",

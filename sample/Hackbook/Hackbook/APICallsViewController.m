@@ -20,6 +20,7 @@
 #import "DataSet.h"
 #import "APIResultsViewController.h"
 #import "RootViewController.h"
+#import "SBJson.h"
 
 // For re-using table cells
 #define TITLE_TAG 1001
@@ -355,12 +356,11 @@
  */
 - (void)apiDialogFeedUser {
     currentAPICall = kDialogFeedUser;
-    SBJSON *jsonWriter = [[SBJSON new] autorelease];
 
     // The action links to be shown with the post in the feed
     NSArray* actionLinks = [NSArray arrayWithObjects:[NSDictionary dictionaryWithObjectsAndKeys:
                                                            @"Get Started",@"name",@"http://m.facebook.com/apps/hackbookios/",@"link", nil], nil];
-    NSString *actionLinksStr = [jsonWriter stringWithObject:actionLinks];
+    NSString *actionLinksStr = [actionLinks JSONRepresentation];
     // Dialog parameters
     NSMutableDictionary *params = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                    @"I'm using the Hackbook for iOS app", @"name",
@@ -393,11 +393,10 @@
  */
 - (void)apiDialogFeedFriend:(NSString *)friendID {
     currentAPICall = kDialogFeedFriend;
-    SBJSON *jsonWriter = [[SBJSON new] autorelease];
 
     NSArray* actionLinks = [NSArray arrayWithObjects:[NSDictionary dictionaryWithObjectsAndKeys:
                                                            @"Get Started",@"name",@"http://m.facebook.com/apps/hackbookios/",@"link", nil], nil];
-    NSString *actionLinksStr = [jsonWriter stringWithObject:actionLinks];
+    NSString *actionLinksStr = [actionLinks JSONRepresentation];
     // The "to" parameter targets the post to a friend
     NSMutableDictionary *params = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                    friendID, @"to",
@@ -427,13 +426,12 @@
  */
 - (void)apiDialogRequestsSendToMany {
     currentAPICall = kDialogRequestsSendToMany;
-    SBJSON *jsonWriter = [[SBJSON new] autorelease];
     NSDictionary *gift = [NSDictionary dictionaryWithObjectsAndKeys:
                                  @"5", @"social_karma",
                                  @"1", @"badge_of_awesomeness",
                                  nil];
 
-    NSString *giftStr = [jsonWriter stringWithObject:gift];
+    NSString *giftStr = [gift JSONRepresentation];
     NSMutableDictionary* params = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                                    @"Learn how to make your iOS apps social.",  @"message",
                                    @"Check this out", @"notification_text",
